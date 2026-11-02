@@ -13,7 +13,7 @@ services are federated, but the identity always anchors to a domain name.
 
 ## Specifications
 
-The ANS protocol is split across six layered specifications under [`spec/`](spec/):
+The ANS protocol is split across seven layered specifications under [`spec/`](spec/):
 
 | Layer | File | Topic |
 | --- | --- | --- |
@@ -23,14 +23,9 @@ The ANS protocol is split across six layered specifications under [`spec/`](spec
 | ANS-3 | [`spec/ans-3-dns-publication.md`](spec/ans-3-dns-publication.md) | DNS publication, record styles, DANE, anchor-conditional emission |
 | ANS-4 | [`spec/ans-4-transparency.md`](spec/ans-4-transparency.md) | SCITT statements and receipts, Transparency Log, checkpoints and tiles, HCS anchoring |
 | ANS-5 | [`spec/ans-5-integrity-monitoring.md`](spec/ans-5-integrity-monitoring.md) | `VerificationWorker`, integrity reporting |
+| ANS-6 | [`spec/ans-6-agent-authentication.md`](spec/ans-6-agent-authentication.md) | Agent-to-agent authentication: badge/SCITT verification tiers, mTLS and DPoP (RFC 9449) caller methods |
 
 Worked examples for ANS-1 live at [`spec/examples/ans-1-examples.md`](spec/examples/ans-1-examples.md). [`DESIGN.md`](DESIGN.md) is a pointer to the layered specs and to the IETF draft.
-
-**[TRUST_INDEX_SPEC.md](TRUST_INDEX_SPEC.md)** — Trust evaluation. How a Trust
-Index crawls sealed data from federated Registration Authorities, combines it with
-external signals, and scores agents across five dimensions: integrity, identity,
-solvency, behavior, and safety. Trust Manifest schema, credential formats,
-identity grades, federation, and security considerations.
 
 **[MAESTRO.md](MAESTRO.md)** — Security analysis. Applies the CSA
 [MAESTRO](https://cloudsecurityalliance.org/blog/2025/02/06/agentic-ai-threat-modeling-framework-maestro)
@@ -40,6 +35,23 @@ using a concrete multi-agent travel-booking scenario.
 
 ## Related
 
+**[trust-index-spec](https://github.com/agentnameservice/trust-index-spec)** —
+Trust evaluation. How a Trust Index crawls sealed data from federated
+Registration Authorities, combines it with external signals, and scores agents
+across five dimensions: integrity, identity, solvency, behavior, and safety.
+Trust Manifest schema, credential formats, identity grades, federation, and
+security considerations. Maintained in its own repository; not an ANS protocol
+layer.
+
+A temporary [`TRUST_INDEX_SPEC.md`](TRUST_INDEX_SPEC.md) copy is maintained here
+while the existing PRs [#46](https://github.com/agentnameservice/ans-spec/pull/46),
+[#47](https://github.com/agentnameservice/ans-spec/pull/47),
+[#48](https://github.com/agentnameservice/ans-spec/pull/48),
+[#49](https://github.com/agentnameservice/ans-spec/pull/49), and
+[#50](https://github.com/agentnameservice/ans-spec/pull/50) are reviewed and resolved.
+Accepted changes will be incorporated into `trust-index-spec` before this local
+copy is removed.
+
 **[SENDER_VERIFICATION_SPEC.md](SENDER_VERIFICATION_SPEC.md)** — Per-sender
 email verification. JWS header-only signing with key bindings sealed in a
 SCITT transparency log, discoverable via DNS. Targets business email
@@ -48,15 +60,18 @@ sender is not who they claim. Not an ANS protocol feature.
 
 ## API
 
-- [OpenAPI specification](https://developer.godaddy.com/doc/endpoint/ans)
-  (human-readable)
-- [Machine-readable OpenAPI](https://developer.godaddy.com/swagger/swagger_ans.json)
+The OpenAPI contracts and conformance schemas live under [`api/`](api/):
+
+- [`api/api-spec-v2.yaml`](api/api-spec-v2.yaml) — Registration Authority management API
+- [`api/api-spec-tl-v2.yaml`](api/api-spec-tl-v2.yaml) — Transparency Log API
+- [`api/identity-event-schema-v2.json`](api/identity-event-schema-v2.json) — sealed Verified-Identity event (V2)
+- [`api/tl-response-schema-v2.json`](api/tl-response-schema-v2.json) — Transparency Log entry (V2)
 
 ## SDKs
 
-- [ans-sdk-rust](https://github.com/godaddy/ans-sdk-rust)
-- [ans-sdk-go](https://github.com/godaddy/ans-sdk-go)
-- [ans-sdk-java](https://github.com/godaddy/ans-sdk-java)
+- [ans-sdk-rust](https://github.com/agentnameservice/ans-sdk-rust)
+- [ans-sdk-go](https://github.com/agentnameservice/ans-sdk-go)
+- [ans-sdk-java](https://github.com/agentnameservice/ans-sdk-java)
 
 ## Origin
 
