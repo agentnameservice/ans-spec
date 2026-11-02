@@ -2,8 +2,8 @@
 
 Status: DRAFT v1.0
 Spec: ANS-2 (Versioned Naming)
-Version: 0.2.0
-Date: 2026-07-15
+Version: 0.3.0
+Date: 2026-11-02
 Audience: implementers adding semantic-version naming and Identity Certificate binding to an ANS Registration Authority
 
 ## 1. Scope
@@ -12,7 +12,7 @@ Every registration declares a `version` and derives an ANSName ([ANS-1
 §4.1](ans-1-registration.md#41-step-1--pending-registration)). What is **optional** is the Identity
 Certificate: a registration MAY omit its Identity CSR and operate on its Server Certificate alone ([ANS-1
 §7.2](ans-1-registration.md#72-registrations-without-an-identity-certificate)). The identity-certificate
-surface of ANS-2 — the URI SAN binding and the mTLS semantics — applies when the certificate is
+surface of ANS-2 — the URI SAN and DNS SAN bindings and the mTLS semantics — applies when the certificate is
 present. An identity-bearing registration MAY roll its Identity Certificate via the rotation operation ([ANS-1
 §7](ans-1-registration.md#7-lifecycle-operations)); the registration's `agentId`, `agentHost`, and ANSName are
 unchanged across a roll, and a registration created without an Identity CSR cannot add one later.
@@ -21,7 +21,7 @@ ANS-2 specifies:
 
 - The ANSName URI form (`ans://v<MAJOR>.<MINOR>.<PATCH>.<host>`) and version-coexistence rules.
 - The version field carried on emitted DNS records and Transparency Log events.
-- The Identity Certificate URI SAN binding, including the CSR-side requirement.
+- The Identity Certificate URI SAN and DNS SAN bindings, including the CSR-side requirements.
 - mTLS handshake semantics that consume the Identity Certificate.
 
 ANS-2 is FQDN-shaped. The Identity Certificate URI SAN encodes an ANSName whose host component is an FQDN — true by construction, since every ANSName is derived from the registration's `agentHost`.
@@ -67,18 +67,24 @@ A patch bump may coexist for hours; a major version change may coexist for month
 
 When a registrant submits a `version` and `identityCsrPEM`, the RA's Private CA issues an Identity Certificate. The binding runs through both artifacts:
 
-- **The CSR MUST carry the registration's full ANSName as a `uniformResourceIdentifier` SAN.** The RA validates the CSR's URI SAN against the expected ANSName before signing; a CSR naming any other identifier is rejected. (Server CSRs differ: they carry the agent's FQDN as a DNS SAN, the TLS server-auth convention.)
-- **The issued certificate carries the same ANSName URI SAN**, with `digitalSignature` key usage and the `clientAuth` extended key usage — it is minted as a TLS client certificate — and a CA-configured validity window.
+- **The CSR MUST carry the registration's full ANSName as a `uniformResourceIdentifier` SAN and the registration's `agentHost` as exactly one `dNSName` SAN.** The RA validates both SANs against the registration before signing; a CSR naming any other identifier, omitting either SAN, or carrying more than one DNS name is rejected. (Server CSRs carry only the DNS SAN, the TLS server-auth convention.)
+- **If the CSR sets a Common Name it MUST equal `agentHost`.** The CN is optional.
+- **The issued certificate carries the same ANSName URI SAN and `agentHost` DNS SAN**, with `digitalSignature` key usage and the `clientAuth` extended key usage — it is minted as a TLS client certificate — and a CA-configured validity window.
 
 | Property | Value |
 | --- | --- |
 | Issuer | Private CA operated by the RA |
-| SAN type | `uniformResourceIdentifier` |
-| SAN value | The full ANSName (`ans://v{version}.{agentHost}`), validated against the CSR |
+| SAN type (1) | `uniformResourceIdentifier` |
+| SAN value (1) | The full ANSName (`ans://v{version}.{agentHost}`), validated against the CSR |
+| SAN type (2) | `dNSName` |
+| SAN value (2) | `agentHost` (the registered FQDN; exactly one entry, no wildcard) |
+| Common Name | Optional; when present it MUST equal `agentHost` |
 | Key usage | `digitalSignature`; EKU `clientAuth` |
 | Purpose | Binds the certificate to a specific software version, presentable as a TLS client certificate |
 
-The Identity Certificate requires a URI SAN. The `ans://` scheme is syntactically valid per RFC 3986 §3.1 and permitted in URI SANs per RFC 5280 §4.2.1.6. CA/B Forum Baseline Requirements prohibit `uniformResourceIdentifier` SANs in publicly trusted server certificates (BR §7.1.2.7.12). A Public CA cannot issue this certificate. Only a Private CA, operating under its own issuance policy, can.
+The Identity Certificate requires both a URI SAN (the full ANSName) and a DNS SAN (the registered `agentHost`). Verifiers compare the DNS SAN and, when present, the Common Name against the host named by the URI SAN ([ANS-6 §6.1](ans-6-agent-authentication.md#61-handshake-and-identity-extraction)).
+
+The `ans://` scheme is syntactically valid per RFC 3986 §3.1 and permitted in URI SANs per RFC 5280 §4.2.1.6. CA/B Forum Baseline Requirements prohibit `uniformResourceIdentifier` SANs in publicly trusted server certificates (BR §7.1.2.7.12). A Public CA cannot issue this certificate. Only a Private CA, operating under its own issuance policy, can.
 Identity Certificates MUST NOT be brought-your-own (BYOC): a rogue CA could otherwise issue an Identity Certificate for `ans://v1.0.0.payments.example.com`, and the TL would seal it as if the RA had validated it. The registration request accepts no identity-certificate BYOC input — only a CSR.
 
 ## 4. mTLS with Identity Certificates
