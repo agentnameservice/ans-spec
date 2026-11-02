@@ -43,6 +43,15 @@ Trust Manifest schema, credential formats, identity grades, federation, and
 security considerations. Maintained in its own repository; not an ANS protocol
 layer.
 
+A temporary [`TRUST_INDEX_SPEC.md`](TRUST_INDEX_SPEC.md) copy is maintained here
+while the existing PRs [#46](https://github.com/agentnameservice/ans-spec/pull/46),
+[#47](https://github.com/agentnameservice/ans-spec/pull/47),
+[#48](https://github.com/agentnameservice/ans-spec/pull/48),
+[#49](https://github.com/agentnameservice/ans-spec/pull/49), and
+[#50](https://github.com/agentnameservice/ans-spec/pull/50) are reviewed and resolved.
+Accepted changes will be incorporated into `trust-index-spec` before this local
+copy is removed.
+
 **[SENDER_VERIFICATION_SPEC.md](SENDER_VERIFICATION_SPEC.md)** — Per-sender
 email verification. JWS header-only signing with key bindings sealed in a
 SCITT transparency log, discoverable via DNS. Targets business email
