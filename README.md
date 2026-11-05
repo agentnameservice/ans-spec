@@ -43,6 +43,15 @@ Trust Manifest schema, credential formats, identity grades, federation, and
 security considerations. Maintained in its own repository; not an ANS protocol
 layer.
 
+A temporary [`TRUST_INDEX_SPEC.md`](TRUST_INDEX_SPEC.md) copy is maintained here
+while the existing PRs [#46](https://github.com/agentnameservice/ans-spec/pull/46),
+[#47](https://github.com/agentnameservice/ans-spec/pull/47),
+[#48](https://github.com/agentnameservice/ans-spec/pull/48),
+[#49](https://github.com/agentnameservice/ans-spec/pull/49), and
+[#50](https://github.com/agentnameservice/ans-spec/pull/50) are reviewed and resolved.
+Accepted changes will be incorporated into `trust-index-spec` before this local
+copy is removed.
+
 **[SENDER_VERIFICATION_SPEC.md](SENDER_VERIFICATION_SPEC.md)** — Per-sender
 email verification. JWS header-only signing with key bindings sealed in a
 SCITT transparency log, discoverable via DNS. Targets business email
@@ -51,15 +60,18 @@ sender is not who they claim. Not an ANS protocol feature.
 
 ## API
 
-- [OpenAPI specification](https://developer.godaddy.com/doc/endpoint/ans)
-  (human-readable)
-- [Machine-readable OpenAPI](https://developer.godaddy.com/swagger/swagger_ans.json)
+The OpenAPI contracts and conformance schemas live under [`api/`](api/):
+
+- [`api/api-spec-v2.yaml`](api/api-spec-v2.yaml) — Registration Authority management API
+- [`api/api-spec-tl-v2.yaml`](api/api-spec-tl-v2.yaml) — Transparency Log API
+- [`api/identity-event-schema-v2.json`](api/identity-event-schema-v2.json) — sealed Verified-Identity event (V2)
+- [`api/tl-response-schema-v2.json`](api/tl-response-schema-v2.json) — Transparency Log entry (V2)
 
 ## SDKs
 
-- [ans-sdk-rust](https://github.com/godaddy/ans-sdk-rust)
-- [ans-sdk-go](https://github.com/godaddy/ans-sdk-go)
-- [ans-sdk-java](https://github.com/godaddy/ans-sdk-java)
+- [ans-sdk-rust](https://github.com/agentnameservice/ans-sdk-rust)
+- [ans-sdk-go](https://github.com/agentnameservice/ans-sdk-go)
+- [ans-sdk-java](https://github.com/agentnameservice/ans-sdk-java)
 
 ## Origin
 
