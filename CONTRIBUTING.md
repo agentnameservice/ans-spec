@@ -9,6 +9,12 @@ The [Code of Conduct](CODE_OF_CONDUCT.md) applies to all participation.
 Report vulnerabilities privately using [SECURITY.md](SECURITY.md).
 The repository's [Maintainers](MAINTAINERS.md) handle reviews and releases.
 
+## Licensing
+
+Contributions to this repository are licensed under the
+[Apache License, Version 2.0](LICENSE). Preserve existing copyright and
+third-party license notices.
+
 ## Specification changes
 
 Use the [README](README.md) to find the affected specification and API files.
