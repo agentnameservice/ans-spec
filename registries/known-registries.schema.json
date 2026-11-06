@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/agentnameservice/ans-spec/registries/known-registries.schema.json",
+  "title": "ANS known registries",
+  "description": "Public ANS registries (a Registration Authority paired with a Transparency Log) that meet the admission rules in registries/README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "updatedAt", "registries"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "registries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/registry" }
+    }
+  },
+  "$defs": {
+    "registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "operator", "environment", "state", "since", "ra", "tl", "identityCa"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Stable identifier, never reused. Convention: <operator>-<environment>."
+        },
+        "operator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "url", "contact"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+            "contact": {
+              "type": "string",
+              "format": "uri",
+              "description": "Operational contact as a URL: a mailto: to a role mailbox or an https: reporting page. Not a personal mailbox."
+            }
+          }
+        },
+        "environment": { "enum": ["production", "test"] },
+        "state": {
+          "enum": ["pending", "usable", "readonly", "retired"],
+          "description": "pending: listed, not yet trusted. usable: accepts registrations and verifies. readonly: verifies, accepts no new events. retired: no longer trusted; kept for the historical record."
+        },
+        "since": { "type": "string", "format": "date" },
+        "until": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Date the registry left the usable state. Required to be non-null when state is retired."
+        },
+        "ra": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["baseUrl", "apiVersions", "auth"],
+          "properties": {
+            "baseUrl": { "type": "string", "format": "uri", "pattern": "^https://[^/?#]+$" },
+            "apiVersions": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "enum": ["v1", "v2"] }
+            },
+            "auth": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "enum": ["sso-key", "bearer"] },
+              "description": "Authorization schemes the RA accepts: sso-key is `Authorization: sso-key <key>:<secret>`; bearer is `Authorization: Bearer <token>`."
+            }
+          }
+        },
+        "tl": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["baseUrl", "verificationKeys"],
+          "properties": {
+            "baseUrl": {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https://[^/?#]+$",
+              "description": "The log serves /checkpoint and /root-keys under this URL. The checkpoint origin line and every C2SP key-name prefix equal this URL's host."
+            },
+            "verificationKeys": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9.-]+\\+[0-9a-f]{8}\\+[A-Za-z0-9+/]+=*$",
+                "description": "C2SP signed-note verifier key line, <origin>+<keyid>+<base64>, copied verbatim from the log's /root-keys."
+              }
+            }
+          }
+        },
+        "identityCa": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bundle", "sha256"],
+          "properties": {
+            "bundle": {
+              "type": "string",
+              "pattern": "^pki/[a-z0-9-]+/ca-bundle\\.pem$",
+              "description": "Repository-relative path to the PEM bundle that issues this registry's identity certificates."
+            },
+            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        }
+      },
+      "if": { "properties": { "state": { "const": "retired" } } },
+      "then": { "properties": { "until": { "type": "string" } } }
+    }
+  }
+}

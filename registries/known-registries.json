@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-31T00:00:00Z",
+  "registries": [
+    {
+      "id": "godaddy-production",
+      "operator": {
+        "name": "GoDaddy",
+        "url": "https://www.godaddy.com",
+        "contact": "https://github.com/agentnameservice/ans-spec/security/advisories/new"
+      },
+      "environment": "production",
+      "state": "usable",
+      "since": "2026-03-03",
+      "until": null,
+      "ra": {
+        "baseUrl": "https://api.godaddy.com",
+        "apiVersions": ["v1", "v2"],
+        "auth": ["sso-key", "bearer"]
+      },
+      "tl": {
+        "baseUrl": "https://transparency.ans.godaddy.com",
+        "verificationKeys": [
+          "transparency.ans.godaddy.com+c9e2f584+AjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJiE0eriKUOYbYrXerJlCJv6TZGEglLkPOHo+bEieNtPsL2FjuXfRCZbYF3RCwqF/99iDVxIUHJWTcW3KXqbiCU="
+        ]
+      },
+      "identityCa": {
+        "bundle": "pki/prod/ca-bundle.pem",
+        "sha256": "4a3267581421b6e98470ff3a3c1ee422467facde0e12f22e57248bb56f99c443"
+      }
+    },
+    {
+      "id": "godaddy-ote",
+      "operator": {
+        "name": "GoDaddy",
+        "url": "https://www.godaddy.com",
+        "contact": "https://github.com/agentnameservice/ans-spec/security/advisories/new"
+      },
+      "environment": "test",
+      "state": "usable",
+      "since": "2026-03-03",
+      "until": null,
+      "ra": {
+        "baseUrl": "https://api.ote-godaddy.com",
+        "apiVersions": ["v1", "v2"],
+        "auth": ["sso-key", "bearer"]
+      },
+      "tl": {
+        "baseUrl": "https://transparency.ans.ote-godaddy.com",
+        "verificationKeys": [
+          "transparency.ans.ote-godaddy.com+7b7c29c1+AjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABMpcwxnxsuH+svxoM5pS2KmMtbwVrm49Kcio7MbcdIZ10dFqLMj/E9RlXg1BR/s4Yk86sOFuE0r1ix83ROWb4sc="
+        ]
+      },
+      "identityCa": {
+        "bundle": "pki/ote/ca-bundle.pem",
+        "sha256": "4a3267581421b6e98470ff3a3c1ee422467facde0e12f22e57248bb56f99c443"
+      }
+    }
+  ]
+}
