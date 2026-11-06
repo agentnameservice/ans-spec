@@ -2,8 +2,8 @@
 
 Status: DRAFT v1.0
 Spec: ANS-6 (Agent-to-Agent Authentication)
-Version: 0.1.0
-Date: 2026-08-24
+Version: 0.2.0
+Date: 2026-11-03
 Audience: implementers building ANS-aware agent runtimes and SDKs (caller and callee sides), and operators deploying agent-to-agent authentication
 
 ## 1. Scope
@@ -543,12 +543,15 @@ processing application data.
 1. The TLS layer validates the client certificate chain against the RA Private CA trust anchor.
    No chain → reject at the TLS layer.
 2. Extract from the validated certificate:
-   - **DNS SAN** (also the CN): the caller's FQDN, e.g. `caller.example.com`.
+   - **DNS SAN**: the caller's FQDN, e.g. `caller.example.com`. Exactly one DNS SAN is
+     present and it MUST equal the host component of the URI SAN. The Common Name is optional;
+     when present it MUST also equal that host.
    - **URI SAN**: the full ANSName, e.g. `ans://v1.0.0.caller.example.com` ([ANS-2
-     §3](ans-2-versioned-naming.md#3-the-identity-certificate)). No URI SAN → not an ANS Identity
-     Certificate.
+     §3](ans-2-versioned-naming.md#3-the-identity-certificate)). Exactly one URI SAN is required.
+     No URI SAN → not an ANS Identity Certificate.
 3. Parse the version from the URI SAN: strip the leading `ans://` and the trailing `.{FQDN}`
-   (using the DNS SAN's FQDN); the remainder is the `v`-prefixed version.
+   (the host component of the ANSName, which equals `agentHost` and the DNS SAN by
+   construction); the remainder is the `v`-prefixed version.
 
 The handshake completes before verification, but the callee MUST NOT process application requests
 until verification finishes. Cache verified results per §6.4.
@@ -612,7 +615,8 @@ attestations), run them after ANS verification instead.
 | Condition | Result |
 | --- | --- |
 | Certificate does not chain to the Private CA | Reject at TLS layer |
-| No URI SAN | Not an ANS Identity Certificate |
+| URI SAN missing or more than one | Not an ANS Identity Certificate |
+| DNS SAN missing, not exactly one, or ≠ URI SAN host | Not a conformant Identity Certificate |
 | No `_ans-badge` record for the caller's FQDN (badge tier) | NXDOMAIN → reject (§9.1 — revocation removes the record, so determinate absence is adverse); SERVFAIL/timeout → apply failure policy |
 | Badge URL host not a trusted TL | Reject |
 | Status terminal (`EXPIRED` / `REVOKED`) | Reject |
