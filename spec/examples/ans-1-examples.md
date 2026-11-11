@@ -90,7 +90,7 @@ A representative request payload (the AHP submits this to the RA's `POST /v1/age
       "agentUrl": "wss://support.example.com/a2a",
       "metaDataUrl": "https://support.example.com/.well-known/agent-card.json",
       "metaDataHash": "SHA256:3b4f2c1a9e8d7b6c5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b",
-      "transports": ["STREAMABLE_HTTP", "SSE"],
+      "transports": ["STREAMABLE-HTTP", "SSE"],
       "functions": [{ "id": "lookupOrder", "name": "Lookup Order", "tags": ["order", "support"] }]
     }
   ],
