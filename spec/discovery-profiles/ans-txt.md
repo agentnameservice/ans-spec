@@ -57,8 +57,8 @@ SvcPriority `1` (ServiceMode), TargetName `.` (the origin — the owner name its
 
 - `version` ← the registration's version (ANS-2), rendered without a `v` prefix.
 - `p` ← the endpoint's protocol, mapped to the `_ans` token: `A2A`→`a2a`, `MCP`→`mcp`,
-  `HTTP_API`→`http-api`. (A future protocol added to the domain layer passes through unchanged.)
-  The `ANS_DNSAID` profile maps `HTTP_API` to `x-http` instead; the two families share `a2a`/`mcp`
+  `HTTP-API`→`http-api`. (A future protocol added to the domain layer passes through unchanged.)
+  The `ANS_DNSAID` profile maps `HTTP-API` to `x-http` instead; the two families share `a2a`/`mcp`
   but diverge on the HTTP token.
 - `url` ← the endpoint's `agentUrl`. ANS-1 requires the authority of every `agentUrl` to equal the
   agent's `agentHost`, so the published `url` always lives under the agent's FQDN.
