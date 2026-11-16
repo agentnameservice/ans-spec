@@ -1,8 +1,8 @@
 # ANS-4: Transparency & Receipts
 
-Status: DRAFT v1.0
+Status: Active
 Spec: ANS-4 (Transparency & Receipts)
-Version: 0.2.0
+Document version: 0.2.0
 Date: 2026-07-18
 Audience: implementers building or operating an ANS Transparency Log (TL), and AHPs and verifiers consuming SCITT receipts
 

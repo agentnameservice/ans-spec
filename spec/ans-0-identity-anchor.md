@@ -1,8 +1,8 @@
 # ANS-0: Identity
 
-Status: DRAFT v1.0
+Status: Active
 Spec: ANS-0 (Identity)
-Version: 0.2.0
+Document version: 0.2.0
 Date: 2026-06-23
 Audience: implementers building an ANS-conformant Registration Authority, Transparency Log, Integrity Monitor, or verifier
 

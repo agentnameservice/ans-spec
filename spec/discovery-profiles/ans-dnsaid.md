@@ -1,9 +1,9 @@
 # Discovery profile: `ANS_DNSAID`
 
-Status: DRAFT v1.0
+Status: Active
 Profile: ANS_DNSAID (the DNS-AID-aligned SVCB family)
 Core: [ANS-3: DNS Publication](../ans-3-dns-publication.md)
-Version: 0.1.0
+Document version: 0.1.0
 Date: 2026-06-29
 Audience: implementers building an ANS-conformant Registration Authority
 
