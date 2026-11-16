@@ -66,7 +66,7 @@ registry-sourced address hints go stale and are out of scope.
 ## 3. Parameter sources and selection
 
 - `alpn` / `bap` ← the endpoint's protocol, mapped to the DNS-AID token: `A2A`→`a2a`, `MCP`→`mcp`,
-  `HTTP_API`→`x-http`. The `x-` prefix makes the HTTP token a valid DNS-AID draft-02
+  `HTTP-API`→`x-http`. The `x-` prefix makes the HTTP token a valid DNS-AID draft-02
   `extension-protocol` (`a2a` / `mcp` are the built-in protocols; everything else MUST be
   `x-`-prefixed). `ANS_TXT` uses `http-api` for the same protocol — the two families diverge on the
   HTTP token only.
