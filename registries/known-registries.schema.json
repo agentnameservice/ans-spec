@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/agentnameservice/ans-spec/registries/known-registries.schema.json",
   "title": "ANS known registries",
-  "description": "Public ANS registries (a Registration Authority paired with a Transparency Log) that meet the admission rules in registries/README.md.",
+  "description": "Directory of public ANS registries (a Registration Authority and its Transparency Log, per environment) that consumers can choose from. Being listed is not an endorsement and does not make a registry trusted; see registries/README.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "updatedAt", "registries"],
@@ -19,98 +19,73 @@
     "registry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "operator", "environment", "state", "since", "ra", "tl", "identityCa"],
+      "required": ["id", "operator", "environments"],
       "properties": {
         "id": {
           "type": "string",
           "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
-          "description": "Stable identifier, never reused. Convention: <operator>-<environment>."
+          "description": "Stable identifier for the registry, never reused. Convention: the operator's name in lower case."
         },
         "operator": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Display name of the organization that runs the registry."
+        },
+        "documentation": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "The operator's setup documentation for registrants and verifiers."
+        },
+        "environments": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["name", "url", "contact"],
+          "minProperties": 1,
           "properties": {
-            "name": { "type": "string", "minLength": 1 },
-            "url": { "type": "string", "format": "uri", "pattern": "^https://" },
-            "contact": {
-              "type": "string",
-              "format": "uri",
-              "description": "Operational contact as a URL: a mailto: to a role mailbox or an https: reporting page. Not a personal mailbox."
-            }
-          }
-        },
-        "environment": { "enum": ["production", "test"] },
-        "state": {
-          "enum": ["pending", "usable", "readonly", "retired"],
-          "description": "pending: listed, not yet trusted. usable: accepts registrations and verifies. readonly: verifies, accepts no new events. retired: no longer trusted; kept for the historical record."
-        },
-        "since": { "type": "string", "format": "date" },
-        "until": {
-          "type": ["string", "null"],
-          "format": "date",
-          "description": "Date the registry left the usable state. Required to be non-null when state is retired."
-        },
+            "production": { "$ref": "#/$defs/environment" },
+            "test": { "$ref": "#/$defs/environment" }
+          },
+          "description": "The environments the operator runs. Nothing registered in test is production state."
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ra", "tl"],
+      "properties": {
         "ra": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["baseUrl", "apiVersions", "auth"],
-          "properties": {
-            "baseUrl": { "type": "string", "format": "uri", "pattern": "^https://[^/?#]+$" },
-            "apiVersions": {
-              "type": "array",
-              "minItems": 1,
-              "uniqueItems": true,
-              "items": { "enum": ["v1", "v2"] }
-            },
-            "auth": {
-              "type": "array",
-              "minItems": 1,
-              "uniqueItems": true,
-              "items": { "enum": ["sso-key", "bearer"] },
-              "description": "Authorization schemes the RA accepts: sso-key is `Authorization: sso-key <key>:<secret>`; bearer is `Authorization: Bearer <token>`."
-            }
-          }
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://[^/?#]+$",
+          "description": "Registration Authority origin. ANS-1 routes are served under it."
         },
         "tl": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["baseUrl", "verificationKeys"],
-          "properties": {
-            "baseUrl": {
-              "type": "string",
-              "format": "uri",
-              "pattern": "^https://[^/?#]+$",
-              "description": "The log serves /checkpoint and /root-keys under this URL. The checkpoint origin line and every C2SP key-name prefix equal this URL's host."
-            },
-            "verificationKeys": {
-              "type": "array",
-              "minItems": 1,
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-z0-9.-]+\\+[0-9a-f]{8}\\+[A-Za-z0-9+/]+=*$",
-                "description": "C2SP signed-note verifier key line, <origin>+<keyid>+<base64>, copied verbatim from the log's /root-keys."
-              }
-            }
-          }
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://[^/?#]+$",
+          "description": "Transparency Log origin. /checkpoint, /root-keys, and the ANS-4 read routes are served under it."
         },
         "identityCa": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["bundle", "sha256"],
+          "required": ["url", "sha256"],
+          "description": "Where the operator publishes the CA bundle that issues this environment's identity certificates. Informational: fetching the bundle does not make its roots trusted.",
           "properties": {
-            "bundle": {
+            "url": {
               "type": "string",
-              "pattern": "^pki/[a-z0-9-]+/ca-bundle\\.pem$",
-              "description": "Repository-relative path to the PEM bundle that issues this registry's identity certificates."
+              "format": "uri",
+              "pattern": "^https://",
+              "description": "The published PEM bundle. URLs into this repository use the main ref, e.g. https://raw.githubusercontent.com/agentnameservice/ans-spec/main/pki/prod/ca-bundle.pem."
             },
-            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "description": "SHA-256 of the bundle bytes, lower-case hex."
+            }
           }
         }
-      },
-      "if": { "properties": { "state": { "const": "retired" } } },
-      "then": { "properties": { "until": { "type": "string" } } }
+      }
     }
   }
 }

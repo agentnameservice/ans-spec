@@ -1,15 +1,15 @@
 # Known ANS Registries
 
-`known-registries.json` lists the public ANS registries that meet the
-admission rules below. A registry is a Registration Authority (RA) and
-the Transparency Log (TL) it publishes to. Verifiers, SDKs, and tooling
-read this file to learn which logs exist and which keys sign their
-checkpoints and receipts.
+`known-registries.json` is a directory of public ANS registries. A
+registry is a Registration Authority (RA) and the Transparency Log (TL)
+it publishes to; an operator usually runs a production and a test
+environment of each. Tooling reads this file so a consumer can pick a
+registry and environment by name instead of typing URLs.
 
-Being listed records that an operator met published, objective
-criteria. It is not an endorsement, and no entry is a default. ANS is an
-open specification that anyone may operate; this file is the project's
-record of who does.
+Being listed records that a registry exists and where its endpoints
+are. It is not an endorsement, it does not make the registry trusted,
+and no entry is a default. The consumer chooses which registry to use
+and which log keys and certificate authorities to accept.
 
 ## Files
 
@@ -18,84 +18,67 @@ registries/
 ├── README.md                     this document
 ├── known-registries.schema.json  JSON Schema 2020-12 for the data file
 ├── known-registries.json         the data
-└── validate.py                   invariant checks run by CI
+└── validate.py                   structural checks run by CI
 ```
 
 ## Entry fields
 
+One entry per registry.
+
 | Field | Meaning |
 |---|---|
-| `id` | Stable identifier, `<operator>-<environment>`. Never reused, even after retirement. |
-| `operator` | Who runs it: display name, home page, and an operational contact that is a role mailbox or reporting page, not a person. |
-| `environment` | `production` or `test`. Test registries issue under test or production PKI as the operator documents; nothing registered there is production state. |
-| `state` | Lifecycle state, see below. |
-| `since` / `until` | Dates the entry entered and left the `usable` state. |
-| `ra.baseUrl` | RA origin. ANS-1 routes are served under it. |
-| `ra.apiVersions` | RA API lanes served (`v1`, `v2`). |
-| `ra.auth` | Authorization schemes the RA accepts. |
-| `tl.baseUrl` | TL origin. `/checkpoint`, `/root-keys`, and the ANS-4 read routes are served under it. The checkpoint origin line and every verification key's name prefix equal this URL's host. |
-| `tl.verificationKeys` | C2SP signed-note verifier lines, copied verbatim from the log's `/root-keys`. Carried here so an offline verifier needs no network. |
-| `identityCa` | Path to the PEM bundle in `pki/` that issues the registry's identity certificates, with its SHA-256. |
+| `id` | Stable identifier, never reused. Convention: the operator's name in lower case. |
+| `operator` | Display name of the organization that runs the registry. |
+| `documentation` | Optional. The operator's setup documentation for registrants and verifiers. |
+| `environments` | One or both of `production` and `test`, each as below. Nothing registered in `test` is production state. |
 
-## States
+Each environment:
 
-| State | Verifiers | Registrants |
-|---|---|---|
-| `pending` | Do not trust. | May register for testing; nothing is attested yet. |
-| `usable` | Trust. | Open. |
-| `readonly` | Trust. | Closed. The log still serves and still verifies existing receipts. |
-| `retired` | Do not trust. | Closed. Kept so the record of what was ever trusted is never lost. |
+| Field | Meaning |
+|---|---|
+| `ra` | RA origin. ANS-1 routes are served under it. |
+| `tl` | TL origin. `/checkpoint`, `/root-keys`, and the ANS-4 read routes are served under it. |
+| `identityCa` | Optional. The `url` of the PEM bundle the operator publishes for the CA certificates that issue this environment's identity certificates, and the `sha256` of its bytes. |
 
-SDK and verifier defaults, where they exist, include exactly the
-`usable` and `readonly` entries.
+## What the directory does not carry
 
-## Admission
+**Transparency Log keys.** The keys that sign a log's checkpoints are
+served by the log itself at `{tl}/root-keys` and are not copied here,
+so a rotation does not depend on a pull request to this repository or
+on every consumer refreshing its copy of this file. A consumer fetches
+the keys after selecting a registry and environment, validates them,
+and keeps them for offline verification. Refreshing them is an explicit
+operation, and older keys are retained so receipts they signed still
+verify.
 
-An operator adds itself by opening a pull request that appends one entry
-and nothing else. The pull request is merged by a maintainer who is not
-affiliated with the applicant, with approval from two maintainers. It
-must demonstrate, with links a reviewer can check:
+**Trust decisions.** `identityCa` says where an operator publishes its
+CA bundle and what its bytes hash to. Downloading that bundle does not
+make its roots trusted. A consumer explicitly configures the roots it
+accepts, scoped to that registry and environment, and a routine refresh
+of this directory or of the bundle must not add or replace trusted CAs
+without that explicit step.
 
-1. `GET {tl.baseUrl}/root-keys` is publicly reachable and its content
-   equals `tl.verificationKeys`.
-2. `GET {tl.baseUrl}/checkpoint` verifies under one of those keys, and
-   its origin line equals the host of `tl.baseUrl`.
-3. The RA serves responses conformant to `api/api-spec-v2.yaml` for
-   every lane listed in `ra.apiVersions`. Until a conformance suite
-   exists, a public registration whose event appears in the log and
-   verifies offline with a published verifier satisfies this.
-4. A published log policy stating maximum merge delay, retention, and
-   the incident contact.
-5. An operator contact that is a role mailbox or a reporting page.
+## Listing a registry
 
-New entries enter as `pending`. A maintainer moves an entry to `usable`
-after fourteen days of continuous checkpoint growth with no split view,
-observed with an ANS-5 monitor.
-
-## Changes and removal
-
-- **Key rotation**: the operator opens a pull request that appends the
-  new key to `tl.verificationKeys`. Old keys are not removed while any
-  receipt they signed is within its validity window.
-- **Voluntary shutdown**: the operator opens a pull request moving the
-  entry to `readonly`, then to `retired` with `until` set once the log
-  stops serving.
-- **Compromise or split view**: any maintainer moves the entry to
-  `retired` the same day, with `until` set, and opens an issue with the
-  evidence. The operator may apply for re-admission under a new `id`.
+An operator adds, changes, or removes its entry by opening a pull
+request that touches its entry and nothing else. CI checks structure
+only, as described below. Maintainers do not assess how the registry
+is operated, and merging an entry is not an endorsement.
 
 ## Validation
 
 CI validates `known-registries.json` against the schema and runs
-`validate.py`, which checks that identifiers are unique, every
-verification key's name prefix equals the TL host, every `identityCa`
-hash matches the bundle in `pki/`, and every `retired` entry has an
-`until` date. Run both locally with:
+`validate.py`, which checks that identifiers are unique, that no two
+environments share an RA or TL origin, and that every `identityCa.url`
+served from this repository (`https://raw.githubusercontent.com/agentnameservice/ans-spec/main/...`)
+names an existing file whose SHA-256 equals `identityCa.sha256`. Run
+both locally with:
 
 ```bash
 check-jsonschema --schemafile registries/known-registries.schema.json registries/known-registries.json
 python3 -I registries/validate.py
 ```
 
-Neither check touches the network. Liveness of the listed endpoints is
-an operational concern for monitors, not a gate on this repository.
+Neither check touches the network. Bundles published elsewhere are
+checked for shape only, and liveness of the listed endpoints is an
+operational concern for monitors, not a gate on this repository.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Invariant checks for registries/known-registries.json beyond what JSON Schema expresses.
+"""Structural checks for registries/known-registries.json beyond what JSON Schema expresses.
 
 Run with ``python3 -I registries/validate.py`` from the repository root.
 Exits non-zero and prints one line per violation.
@@ -11,51 +11,52 @@ import hashlib
 import json
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "registries" / "known-registries.json"
+REPO_RAW = "https://raw.githubusercontent.com/agentnameservice/ans-spec/"
 
 
-def host_of(url: str) -> str:
-    return (urlparse(url).hostname or "").lower()
+def local_bundle(url: str) -> Path | None:
+    """Return the working-tree path of a bundle served from this repository, else None."""
+    if not url.startswith(REPO_RAW):
+        return None
+    _ref, _, path = url[len(REPO_RAW):].partition("/")
+    return ROOT / path
+
+
+def check_identity_ca(label: str, ca: dict) -> list[str]:
+    bundle = local_bundle(ca["url"])
+    if bundle is None:
+        return []
+    if not bundle.is_file():
+        return [f"{label}: identityCa.url names {ca['url']}, which is not a file in this repository"]
+    digest = hashlib.sha256(bundle.read_bytes()).hexdigest()
+    if digest != ca["sha256"]:
+        return [f"{label}: identityCa.sha256 {ca['sha256']} != {digest} for {bundle.relative_to(ROOT)}"]
+    return []
 
 
 def check(registries: list[dict]) -> list[str]:
     problems: list[str] = []
     seen_ids: set[str] = set()
-    seen_tl: set[str] = set()
+    seen_origins: dict[str, str] = {}
 
     for entry in registries:
         rid = entry.get("id", "<missing id>")
-
         if rid in seen_ids:
             problems.append(f"{rid}: duplicate id")
         seen_ids.add(rid)
 
-        tl_url = entry["tl"]["baseUrl"]
-        tl_host = host_of(tl_url)
-        if tl_host in seen_tl:
-            problems.append(f"{rid}: tl.baseUrl host {tl_host} already listed")
-        seen_tl.add(tl_host)
-
-        for key in entry["tl"]["verificationKeys"]:
-            name = key.split("+", 1)[0]
-            if name != tl_host:
-                problems.append(f"{rid}: verification key name {name!r} != tl host {tl_host!r}")
-
-        bundle = ROOT / entry["identityCa"]["bundle"]
-        if not bundle.is_file():
-            problems.append(f"{rid}: identityCa.bundle {entry['identityCa']['bundle']} not found")
-        else:
-            digest = hashlib.sha256(bundle.read_bytes()).hexdigest()
-            if digest != entry["identityCa"]["sha256"]:
-                problems.append(f"{rid}: identityCa.sha256 {entry['identityCa']['sha256']} != {digest}")
-
-        if entry["state"] == "retired" and not entry.get("until"):
-            problems.append(f"{rid}: retired entry has no until date")
-        if entry["state"] != "retired" and entry.get("until"):
-            problems.append(f"{rid}: until is set but state is {entry['state']}")
+        for name, env in entry["environments"].items():
+            label = f"{rid}/{name}"
+            for role in ("ra", "tl"):
+                origin = env[role].lower()
+                if origin in seen_origins:
+                    problems.append(f"{label}: {role} {origin} already listed by {seen_origins[origin]}")
+                seen_origins[origin] = label
+            if "identityCa" in env:
+                problems.extend(check_identity_ca(label, env["identityCa"]))
 
     return problems
 
@@ -67,7 +68,8 @@ def main() -> int:
         print(line, file=sys.stderr)
     if problems:
         return 1
-    print(f"ok: {len(data['registries'])} registries")
+    environments = sum(len(entry["environments"]) for entry in data["registries"])
+    print(f"ok: {len(data['registries'])} registries, {environments} environments")
     return 0
 
 
