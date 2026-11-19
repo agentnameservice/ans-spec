@@ -1,8 +1,8 @@
 # ANS-3: DNS Publication
 
-Status: DRAFT v1.0
+Status: Active
 Spec: ANS-3 (DNS Publication)
-Version: 0.1.0
+Document version: 0.1.0
 Date: 2026-06-29
 Audience: implementers building or operating an ANS Registration Authority that emits DNS records and the AHPs that provision them
 

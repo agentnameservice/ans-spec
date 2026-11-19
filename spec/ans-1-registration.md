@@ -1,8 +1,8 @@
 # ANS-1: Registration & Lifecycle
 
-Status: DRAFT v1.0
+Status: Active
 Spec: ANS-1 (Registration & Lifecycle)
-Version: 0.2.0
+Document version: 0.2.0
 Date: 2026-07-02
 Audience: implementers building an ANS-conformant Registration Authority (RA)
 

@@ -1,8 +1,8 @@
 # ANS-2: Versioned Naming
 
-Status: DRAFT v1.0
+Status: Active
 Spec: ANS-2 (Versioned Naming)
-Version: 0.3.0
+Document version: 0.3.0
 Date: 2026-11-03
 Audience: implementers adding semantic-version naming and Identity Certificate binding to an ANS Registration Authority
 
