@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Inactive pull requests
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+  pull_request_target:
+    types:
+      - synchronize
+      - reopened
+      - closed
+      - ready_for_review
+      - converted_to_draft
+      - review_requested
+      - review_request_removed
+      - labeled
+      - unlabeled
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  inactive:
+    concurrency:
+      group: ans-inactive-prs
+      queue: max
+      cancel-in-progress: false
+    uses: agentnameservice/.github/.github/workflows/inactive-prs.yml@main
+    with:
+      dry_run: true
