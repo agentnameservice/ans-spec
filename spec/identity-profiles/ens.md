@@ -106,8 +106,9 @@ identifier, as with `lei`). The challenge entry advisorily names the resolved ow
 account (`eip155:<chain>:<address>`, the address in EIP-55 checksummed form) so the client can
 confirm which account must sign.
 
-## 4. Seal tier — verbatim verification method
+## 4. Seal tier — account-based
 
+`ens` uses the `account-based` seal tier ([ANS-0 §8.4](../ans-0-identity-anchor.md#84-seal-tiers)).
 The sealed verification method is the resolved owner account as a CAIP-10 `blockchainAccountId`,
 sealed as resolved — the same account-based `blockchainAccountId` seal the
 [`did:ethr`](did-ethr.md) profile uses — alongside the submitted signature. The address component
