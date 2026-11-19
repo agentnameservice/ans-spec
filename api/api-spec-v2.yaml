@@ -1354,6 +1354,14 @@ components:
       schema:
         type: string
         format: uuid
+    IdentityIdPath:
+      name: identityId
+      in: path
+      description: RA-assigned identifier of the Verified Identity (UUIDv7)
+      required: true
+      schema:
+        type: string
+        format: uuid
 
   # ──────────────────────────────────────────────────────────────────
   # Schemas
