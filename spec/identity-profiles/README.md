@@ -11,13 +11,13 @@ The authoritative status is the ANS-0 table; this page is a convenience map.
 | Kind | Profile | Requirement | Axes | Seal tier | Status |
 | --- | --- | --- | --- | --- | --- |
 | `fqdn` (agent primary) | [fqdn.md](fqdn.md) | Required | identifier (ACME) + key (CSR) | n/a (cert-bound) | Active |
-| `did:web` | [did-web.md](did-web.md) | Optional | key only (multi-key) | verbatim verification method | Active |
-| `did:key` | [did-key.md](did-key.md) | Optional | key only | verbatim verification method | Active |
-| `lei` | [lei.md](lei.md) | Optional | key only (vLEI-validated) | thumbprint-only (AID + key thumbprint) | Postponed |
-| `did:plc` | [did-plc.md](did-plc.md) | Optional | key only (multi-key) | verbatim verification method | Deferred (sketch) |
-| `did:ethr` / `did:pkh` | [did-ethr.md](did-ethr.md) | Optional | key only (EIP-712 / ERC-1271) | verbatim verification method | Deferred (sketch) |
-| `did:ion` | [did-ion.md](did-ion.md) | Optional | key only (multi-key) | verbatim verification method | Deferred (sketch) |
-| `ens` | [ens.md](ens.md) | Optional | key only (EIP-712 / ERC-1271, name-owner signature) | verbatim verification method | Postponed |
+| `did:web` | [did-web.md](did-web.md) | Optional | key only (multi-key) | `verbatim` verification method | Active |
+| `did:key` | [did-key.md](did-key.md) | Optional | key only | `verbatim` verification method (derived Multikey) | Active |
+| `lei` | [lei.md](lei.md) | Optional | key only (vLEI-validated) | `thumbprint-only` (AID + key thumbprint) | Postponed |
+| `did:plc` | [did-plc.md](did-plc.md) | Optional | key only (multi-key) | `verbatim` verification method | Deferred (sketch) |
+| `did:ethr` / `did:pkh` | [did-ethr.md](did-ethr.md) | Optional | key only (EIP-712 / ERC-1271) | `account-based` (CAIP-10 account) | Deferred (sketch) |
+| `did:ion` | [did-ion.md](did-ion.md) | Optional | key only (multi-key) | `verbatim` verification method | Deferred (sketch) |
+| `ens` | [ens.md](ens.md) | Optional | key only (EIP-712 / ERC-1271, name-owner signature) | `account-based` (CAIP-10 account, EIP-55) | Postponed |
 
 **Requirement.** `fqdn` is the one required profile (the agent's primary anchor, the *what* —
 required by ANS-1 for every agent registration). Every who-identity profile is **optional**: the
@@ -41,7 +41,7 @@ Every profile document specifies, in this order (ANS-0 §10.2):
 1. Identifier form and canonicalization; how the kind is selected (lexical vs explicit).
 2. Control proof — which axes apply and the exact `verify-control` checks, in order.
 3. Key source and `kid`/key-selection rules.
-4. Seal tier — verbatim verification method, or thumbprint-only, and exactly what is sealed.
+4. Seal tier — `verbatim`, `account-based`, or `thumbprint-only` (ANS-0 §8.4), and exactly what is sealed.
 5. Freshness and ANS-5 monitoring cadence.
 6. Lifecycle specifics (rotation, revocation, re-proof).
 7. Outbound-fetch (SSRF) notes, for fetch-based kinds.
