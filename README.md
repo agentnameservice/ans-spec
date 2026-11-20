@@ -58,6 +58,13 @@ The OpenAPI contracts and conformance schemas live under [`api/`](api/):
 - [`api/identity-event-schema-v2.json`](api/identity-event-schema-v2.json) — sealed Verified-Identity event (V2)
 - [`api/tl-response-schema-v2.json`](api/tl-response-schema-v2.json) — Transparency Log entry (V2)
 
+## Registries
+
+[`registries/known-registries.json`](registries/known-registries.json) is a directory of public
+registries (a Registration Authority and its Transparency Log, per environment) that tooling can
+offer by name; [`registries/README.md`](registries/README.md) describes the entries. Being listed
+is not an endorsement, it does not make a registry trusted, and no entry is a default.
+
 ## SDKs
 
 - [ans-sdk-rust](https://github.com/agentnameservice/ans-sdk-rust)

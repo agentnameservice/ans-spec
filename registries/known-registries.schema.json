@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/agentnameservice/ans-spec/registries/known-registries.schema.json",
+  "title": "ANS known registries",
+  "description": "Directory of public ANS registries (a Registration Authority and its Transparency Log, per environment) that consumers can choose from. Being listed is not an endorsement and does not make a registry trusted; see registries/README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "updatedAt", "registries"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "registries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/registry" }
+    }
+  },
+  "$defs": {
+    "registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "operator", "environments"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Stable identifier for the registry, never reused. Convention: the operator's name in lower case."
+        },
+        "operator": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Display name of the organization that runs the registry."
+        },
+        "documentation": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "The operator's setup documentation for registrants and verifiers."
+        },
+        "environments": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "production": { "$ref": "#/$defs/environment" },
+            "test": { "$ref": "#/$defs/environment" }
+          },
+          "description": "The environments the operator runs. Nothing registered in test is production state."
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ra", "tl"],
+      "properties": {
+        "ra": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://[^/?#]+$",
+          "description": "Registration Authority origin. ANS-1 routes are served under it."
+        },
+        "tl": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://[^/?#]+$",
+          "description": "Transparency Log origin. /checkpoint, /root-keys, and the ANS-4 read routes are served under it."
+        },
+        "identityCa": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url", "sha256"],
+          "description": "Where the operator publishes the CA bundle that issues this environment's identity certificates. Informational: fetching the bundle does not make its roots trusted.",
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https://",
+              "description": "The published PEM bundle. URLs into this repository use the main ref, e.g. https://raw.githubusercontent.com/agentnameservice/ans-spec/main/pki/prod/ca-bundle.pem."
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "description": "SHA-256 of the bundle bytes, lower-case hex."
+            }
+          }
+        }
+      }
+    }
+  }
+}
