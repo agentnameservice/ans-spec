@@ -15,18 +15,33 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "registries" / "known-registries.json"
 REPO_RAW = "https://raw.githubusercontent.com/agentnameservice/ans-spec/"
+REPO_REF = "main"
 
 
 def local_bundle(url: str) -> Path | None:
-    """Return the working-tree path of a bundle served from this repository, else None."""
+    """Return the checkout path of a bundle served from this repository, or None
+    for a bundle published elsewhere.
+
+    Raises ValueError when the URL is under this repository but names a ref
+    other than ``main`` or a path that resolves outside the checkout, so CI
+    hashes the same file the URL serves.
+    """
     if not url.startswith(REPO_RAW):
         return None
-    _ref, _, path = url[len(REPO_RAW):].partition("/")
-    return ROOT / path
+    ref, _, rel = url[len(REPO_RAW):].partition("/")
+    if ref != REPO_REF:
+        raise ValueError(f"uses ref {ref!r}; bundles in this repository must use {REPO_REF!r}")
+    path = (ROOT / rel).resolve()
+    if not path.is_relative_to(ROOT):
+        raise ValueError(f"path {rel!r} resolves outside the checkout")
+    return path
 
 
 def check_identity_ca(label: str, ca: dict) -> list[str]:
-    bundle = local_bundle(ca["url"])
+    try:
+        bundle = local_bundle(ca["url"])
+    except ValueError as err:
+        return [f"{label}: identityCa.url {ca['url']} {err}"]
     if bundle is None:
         return []
     if not bundle.is_file():

@@ -61,18 +61,18 @@ without that explicit step.
 ## Listing a registry
 
 An operator adds, changes, or removes its entry by opening a pull
-request that touches its entry and nothing else. CI checks structure
-only, as described below. Maintainers do not assess how the registry
-is operated, and merging an entry is not an endorsement.
+request. CI checks structure only, as described below. Maintainers do
+not assess how the registry is operated, and merging an entry is not an
+endorsement.
 
 ## Validation
 
 CI validates `known-registries.json` against the schema and runs
 `validate.py`, which checks that identifiers are unique, that no two
 environments share an RA or TL origin, and that every `identityCa.url`
-served from this repository (`https://raw.githubusercontent.com/agentnameservice/ans-spec/main/...`)
-names an existing file whose SHA-256 equals `identityCa.sha256`. Run
-both locally with:
+served from this repository (`https://raw.githubusercontent.com/agentnameservice/ans-spec/...`)
+uses the `main` ref and names a file inside the checkout whose SHA-256
+equals `identityCa.sha256`. Run both locally with:
 
 ```bash
 check-jsonschema --schemafile registries/known-registries.schema.json registries/known-registries.json
