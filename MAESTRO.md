@@ -51,12 +51,12 @@ the trip request from Claude Code and the proposed itinerary from Agent B each c
 The Transparency Log (TL) operates as a SCITT Transparency Service
 (Supply Chain Integrity, Transparency and Trust; RFC 9943)
 and issues binary COSE (CBOR Object Signing and Encryption) receipts as proof of inclusion.
-When Agent B's ANS Trust Card
-(the metadata document hosted at the agent's domain, describing its capabilities and trust artifacts)
-carries a stapled receipt,
-Claude Code verifies it locally using only the TL's public key, without contacting the RA or the TL.
+When Agent B presents its receipt and status token in the `X-SCITT-Receipt` and `X-ANS-Status-Token`
+HTTP headers ([ANS-6 §4.6](spec/ans-6-agent-authentication.md#46-http-header-transport-and-refresh)),
+Claude Code verifies them locally using only the TL's public key, without contacting the RA or the TL
+(the SCITT tier, [ANS-6 §3.2](spec/ans-6-agent-authentication.md#32-verification-tiers)).
 `[PROPOSED]` The Trust Index scores receipt presence as an integrity signal;
-stapled receipts are the strongest delivery mode.
+receipts presented with the request are the strongest delivery mode.
 
 ## Secure sub-contracting (Agent B → Agent C)
 
@@ -145,8 +145,9 @@ The Trust Index's safety dimension scores data egress policy:
 `LOCAL_ONLY` (inference runs on-device, no external calls),
 `RESTRICTED` (data sent only to named partners), or `OPEN` (no restrictions).
 An agent declaring `LOCAL_ONLY` inference can cryptographically attest that claim through a TEE quote.
-The ANS Trust Card's `verifiableClaims` array carries references to
-compliance certifications (SOC 2, HIPAA, GDPR) that govern data handling.
+ANS does not itself carry compliance certifications (SOC 2, HIPAA, GDPR) that govern data handling;
+a Trust Index can weigh them as external signals, while ANS seals only control-proven
+Verified Identities linked to the agent ([ANS-0](spec/ans-0-identity-anchor.md)).
 
 ## Layer 3: Agent Frameworks
 
@@ -163,12 +164,13 @@ Secure connections alone are insufficient.
 The framework governing agent actions requires input validation and sandboxing.
 
 **ANS mitigations.**
-Each protocol listed in the ANS Trust Card links to its own JSON Schema,
-making capability contracts explicit and verifiable.
-The SDK translates Protocol Cards (A2A Agent Cards, MCP Server Cards, OpenAPI documents)
-into Registration Metadata (the RA's normalized representation of the agent's capabilities)
-that the RA seals.
-The Trust Index reads protocol-specific definitions from the Trust Card's endpoint data
+Each registered endpoint can declare a `metaDataUrl` for its protocol metadata document
+(an A2A Agent Card, MCP Server Card, or OpenAPI document) and a `metaDataHash` of that document
+([ANS-1 §4.1](spec/ans-1-registration.md#41-step-1--pending-registration)).
+The RA seals the hash into the TL entry's `attestations.metadataHashes` map,
+making the capability contract explicit and verifiable:
+a verifier or monitor that fetches the document can detect any change since registration.
+The Trust Index reads protocol-specific definitions from those sealed metadata documents
 and scores behavior: protocol adherence, interop compliance, and dispute rate.
 
 ## Layer 4: Deployment and Infrastructure
@@ -209,7 +211,7 @@ Rather than preventing attacks, it detects threats that bypass other layers and 
 
 | Threat | Scenario | Mitigation |
 | :--- | :--- | :--- |
-| **Undetected Malicious Activity** | A prompt injection makes Agent B book an expensive non-refundable flight. Without monitoring, the action goes unnoticed for days. | The Agent Integrity Monitor (AIM) continuously verifies DNS records, ANS Trust Card integrity, and schema hashes for active agents. |
+| **Undetected Malicious Activity** | A prompt injection makes Agent B book an expensive non-refundable flight. Without monitoring, the action goes unnoticed for days. | The Agent Integrity Monitor (AIM) continuously verifies DNS records, Server Certificate fingerprints, and per-endpoint metadata hashes for active agents ([ANS-5 §4](spec/ans-5-integrity-monitoring.md#4-verification-checks)). |
 | **Ecosystem Integrity Failure** | Agent C's DNS is hijacked and its `_ans` record points to a fake agent. | The AIM detects the discrepancy and triggers remediation. Without monitoring, Agent B would trust and connect to the imposter. |
 | **Lack of Forensic Audit Trail** | A user complains Agent B booked a tour they never authorized. No detailed logs exist. | It is impossible to investigate. The company cannot determine if it was user error, agent bug, or attack. |
 
@@ -252,10 +254,12 @@ Guardrails, IAM, policy engines, and compliance checks apply from foundation mod
 
 **ANS mitigations.**
 Every agent registration produces an auditable identity record in the Transparency Log.
-The Trust Index's safety dimension evaluates compliance certifications
-(SOC 2 Type II, HIPAA, ISO 27001) through the ANS Trust Card's `verifiableClaims` array.
-Each credential is verified against the issuer's DID (Decentralized Identifier,
-a URI that resolves to a document containing public verification keys).
+The Trust Index's safety dimension can evaluate compliance certifications
+(SOC 2 Type II, HIPAA, ISO 27001) as external signals, outside the ANS protocol.
+Within ANS, an operator's Verified Identities (for example a `did:web` DID, a Decentralized
+Identifier that resolves to a document containing public verification keys) are sealed only after
+the operator proves control of a key the identifier publishes
+([ANS-0 §3](spec/ans-0-identity-anchor.md#3-the-proof-of-control-gate)).
 
 Every TL entry records the `raId` of the RA instance that processed the registration.
 Auditors can isolate every event a compromised instance touched.
@@ -305,19 +309,22 @@ Trust verification follows a progressive model:
 | Gold | Silver + Transparency Log verification | Three independent trust channels. |
 
 `[PROPOSED]` The Trust Index scores receipt delivery mode as an integrity signal:
-stapled receipts (embedded in the ANS Trust Card) are the strongest
+receipts presented in the `X-SCITT-Receipt` header are the strongest
 because they enable offline Gold-tier verification;
-sidecar receipts (fetched from the `_ans-badge` endpoint) require a network call;
+badges fetched through the `_ans-badge` record require a network call;
 absent receipts are the weakest.
 
-**`[PROPOSED]` Status Tokens.**
+**Status Tokens.**
 A receipt proves an agent was registered; it says nothing about whether the agent has since been revoked.
-The Status Token is a short-lived COSE_Sign1 structure signed by the RA,
-asserting the agent's current lifecycle state (ACTIVE, DEPRECATED, or REVOKED).
-The AHP refreshes it periodically and attaches it to the ANS Trust Card alongside the receipt.
+The status token ([ANS-6 §4.4](spec/ans-6-agent-authentication.md#44-status-token))
+is a short-lived COSE_Sign1 structure signed by the TL,
+asserting the registration's current lifecycle state (`ACTIVE`, `WARNING`, `DEPRECATED`, `EXPIRED`, or `REVOKED`).
+Each agent refreshes its own token and presents it in the `X-ANS-Status-Token` header alongside the receipt
+([ANS-6 §4.6](spec/ans-6-agent-authentication.md#46-http-header-transport-and-refresh)).
 Same principle as OCSP stapling: the server fetches proof of current validity
 so the client does not have to.
-When the token is absent or expired, the verifier falls back to Silver-level verification.
+When the token is absent or expired, the verifier applies its ANS-6 §9.4 policy:
+fall back to the badge tier, accept within a bounded grace window, or fail closed.
 
 **`[DRAFT:HCS-27]` HCS integration.**
 A client can verify the receipt's Merkle root against a public checkpoint on a Hiero consensus topic,
@@ -418,16 +425,12 @@ The AIM validates the chain of artifacts associated with a registration:
     with full DNSSEC validation.
     2. **Server Certificate Check.** TLS handshake to the FQDN;
     the extracted certificate fingerprint must match what the RA sealed in the TL.
-    3. **ANS Trust Card Integrity Check.** When the agent hosts an ANS Trust Card
-    and Registration Metadata was submitted at registration,
-    the AIM fetches the Trust Card from `/.well-known/ans/trust-card.json`,
-    hashes the content,
-    and compares against the hash the RA sealed at activation.
-    When Registration Metadata was not submitted,
-    a conforming AIM computes the baseline hash from the live Trust Card on first successful fetch.
-    4. **Schema Integrity Check.** Parses the ANS Trust Card,
-    fetches each `schema.url`, hashes the content,
-    and compares against the `schema.hash` in the Trust Card.
+    3. **Schema Integrity Check.** When per-endpoint `metaDataHash` values were submitted at registration,
+    the AIM fetches each endpoint's `metaDataUrl`, hashes the document,
+    and compares it against the protocol-keyed entry the RA sealed in the TL's
+    `attestations.metadataHashes` map
+    ([ANS-5 §4](spec/ans-5-integrity-monitoring.md#4-verification-checks)).
+    When no hash was submitted, the check does not apply.
 
     If any check fails, the AIM publishes a finding.
     The RA's remediation process requires corroborating reports from multiple independent monitors
@@ -483,7 +486,7 @@ Anyone with the TL's public key can do this offline.
     Once issued, the receipt never expires.
     If the agent is later revoked, a separate event records the revocation.
     The receipt continues to prove "was registered," not "is currently trusted."
-    `[PROPOSED]` The Status Token fills that gap.
+    The status token (ANS-6 §4.4) fills that gap.
 
 * **Proof size at scale.** The inclusion path contains log2(tree_size) hashes.
 At 1 billion events: approximately 30 hashes x 32 bytes = 960 bytes.

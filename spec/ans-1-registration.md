@@ -59,13 +59,13 @@ The AHP submits a registration request:
 | | `version` | Yes | Semantic version, bare semver (e.g., `1.0.0`) |
 | | `agentDisplayName` | Yes | Human-readable name (max 64 chars) |
 | | `agentDescription` | No | Brief capability description (max 150 chars) |
-| **Endpoints** | per-endpoint `protocol` | Yes | `A2A`, `MCP`, or `HTTP_API` (minimum 1 endpoint) |
+| **Endpoints** | per-endpoint `protocol` | Yes | `A2A`, `MCP`, or `HTTP-API` (minimum 1 endpoint) |
 | | per-endpoint `agentUrl` | Yes | The endpoint URL; its hostname MUST equal `agentHost` (case-insensitive) |
 | | per-endpoint `metaDataUrl` | No | Protocol metadata location |
 | | per-endpoint `metaDataHash` | No | `SHA256:`-prefixed SHA-256 of the document at `metaDataUrl`, computed and declared by the AHP (format-validated by the RA, not re-fetched). Sealed into the TL `attestations.metadataHashes` map keyed by the protocol token |
 | | per-endpoint `documentationUrl` | No | Developer documentation |
 | | per-endpoint `functions` | No | Function declarations: `id`, `name`, optional `tags` |
-| | per-endpoint `transports` | No | `STREAMABLE_HTTP`, `SSE`, `JSON_RPC`, `GRPC`, `REST`, `HTTP` |
+| | per-endpoint `transports` | No | `STREAMABLE-HTTP`, `SSE`, `JSON-RPC`, `GRPC`, `REST`, `HTTP` |
 | **Discovery** | `discoveryProfiles` | No | The DNS record families the RA emits for this registration, per [ANS-3 §6](ans-3-dns-publication.md#6-discovery-profiles). Defaults to `ANS_DNSAID` |
 | **Certificates** | `identityCsrPEM` | No | CSR for the Identity Certificate. When omitted, the agent registers without one and cannot add one later (§7.2) |
 | | `serverCsrPEM` | Conditional | CSR for the RA-issued Server Certificate |
