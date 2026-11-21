@@ -1,8 +1,8 @@
 # ANS-6: Agent-to-Agent Authentication
 
-Status: DRAFT v1.0
+Status: Active
 Spec: ANS-6 (Agent-to-Agent Authentication)
-Version: 0.2.0
+Document version: 0.2.0
 Date: 2026-11-03
 Audience: implementers building ANS-aware agent runtimes and SDKs (caller and callee sides), and operators deploying agent-to-agent authentication
 

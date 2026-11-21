@@ -33,6 +33,19 @@ threat modeling framework to the ANS architecture. Maps threats and mitigations
 across all seven layers, from foundation models through the agent ecosystem,
 using a concrete multi-agent travel-booking scenario.
 
+### Document status and version
+
+The ANS-0 through ANS-6 specifications and DNS discovery profiles use these header fields:
+
+**Status** describes the lifecycle of a specification or profile. **Active** means it is
+current and maintained for implementation; it does not imply a frozen specification or
+formal ratification by a standards body. Discovery profile statuses follow the registry in
+[ANS-3 §6.1](spec/ans-3-dns-publication.md#61-the-discovery-profile-registry).
+
+**Document version** identifies the revision of that individual document. It is separate
+from API versions, wire-format versions, and an agent's registered version. An Active
+document can have a `0.x.y` revision while it continues to evolve.
+
 ## Related
 
 **[trust-index-spec](https://github.com/agentnameservice/trust-index-spec)** —
