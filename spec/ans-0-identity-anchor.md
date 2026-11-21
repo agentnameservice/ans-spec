@@ -435,14 +435,15 @@ before signing, keyed by `identityId` — carries:
 
 | Event type | Requires | Forbids |
 | --- | --- | --- |
-| `IDENTITY_VERIFIED` / `IDENTITY_UPDATED` | non-empty `keys[]` (each a verbatim verification method with an `id`, plus `signedProof`), `verifiedAt`, `providerId` | `ansIds[]` |
+| `IDENTITY_VERIFIED` / `IDENTITY_UPDATED` | non-empty `keys[]` (each a verification method with an `id`, sealed under the profile's seal tier per §8.4, plus `signedProof`), `verifiedAt`, `providerId` | `ansIds[]` |
 | `IDENTITY_REVOKED` | `revokedAt` | `ansIds[]` |
 | `IDENTITY_LINKED` / `IDENTITY_UNLINKED` | non-empty `ansIds[]` | — |
 
-A **`ProvenKey`** is `{verificationMethod, signedProof}`: the `verificationMethod` is the source's
-object quoted verbatim (§8.4), and `signedProof` is the registrant's compact JWS over the served
-`IdentityProofInput` (the `lei` thumbprint-only variant is the documented exception — see the lei
-profile). Worked `IDENTITY_VERIFIED` example (a `did:web` identity with one proven P-256 key):
+A **`ProvenKey`** is `{verificationMethod, signedProof}`: the `verificationMethod` is sealed under
+the profile's seal tier (§8.4) — the source's object quoted verbatim for the `verbatim` tier, or
+the method the RA constructs from the resolved owner account for the `account-based` tier — and
+`signedProof` is the registrant's compact JWS over the served `IdentityProofInput` (the `lei`
+`thumbprint-only` tier is the documented exception — see the lei profile). Worked `IDENTITY_VERIFIED` example (a `did:web` identity with one proven P-256 key):
 
 ```json
 {
@@ -501,7 +502,7 @@ status) and ANS SDKs honor it for validation — which is why it appears here bu
 registration-status link gate. Within a visible entry, the identity's own status is reported
 as-is:
 
-- A `VERIFIED` identity carries its current proven `keys[]` (verbatim verification methods, §8.4)
+- A `VERIFIED` identity carries its current proven `keys[]` (sealed verification methods, §8.4)
   and `keysLogId` — the `logId` of the `IDENTITY_VERIFIED`/`IDENTITY_UPDATED` seal those keys are
   quoted from.
 - A `REVOKED` identity **stays listed** with `identityStatus: REVOKED` and `keys[]` omitted — a
@@ -535,19 +536,43 @@ network round trip, so a racing operation's event can land *after* a revocation 
 MUST NOT flip a revoked identity's public answer back to `VERIFIED`. This is sound because no
 legitimate flow appends to a revoked identity's stream (re-registration mints a new `identityId`).
 
-### 8.4 Seal-verbatim rule
+### 8.4 Seal tiers
 
-Each proven key is sealed as the **verification method exactly as the identifier published it** —
-`id`, `type`, `controller`, and the key material in whichever representation the source used
-(`publicKeyJwk`, or `publicKeyMultibase` for Multikey documents) — copied member-for-member,
-values untouched, alongside the signed challenge. **No derived values are sealed**: no
-thumbprints, no re-encodings, no normalization. Derivations are computed at read time from the
-sealed source and can always be recomputed; a sealed derivation is just one more thing that can
-disagree with it. A third-party verifier checks operator signatures from the badge alone
-(byte-recompute the `IdentityProofInput`, verify the JWS against the sealed method, reject
-unrecognized `crit` headers per RFC 7515 §4.1.11) — no audit walk, no trust in the RA. The
-profile names which representation it seals; `lei` is the deliberate exception (subject AID + key
-thumbprint only — the ACDC is PII and KERI's KEL is the authoritative key history).
+Every identity profile names exactly one **seal tier**, which fixes what the proof event records
+for each proven key. There are three tiers:
+
+| Seal tier | Kinds | What is sealed | What a third party compares |
+| --- | --- | --- | --- |
+| `verbatim` | `did:web`, `did:key`, `did:plc`, `did:ion` | The verification method exactly as the identifier publishes it (for `did:key`, the Multikey method the identifier deterministically expands to) | The sealed method, byte-for-byte, against the published document or the expanded identifier |
+| `account-based` | `did:ethr` / `did:pkh`, `ens` | A complete verification method the RA constructs from the resolved owner account: a CAIP-10 `blockchainAccountId`, in the canonical form the profile fixes (EIP-55 checksummed address for `ens`) | The signer recovered from the proof (or the ERC-1271 result) against the sealed account |
+| `thumbprint-only` | `lei` | The subject AID and a key thumbprint, alongside the proof; not the ACDC and not the KEL | The thumbprint against the AID's key state in its KEL |
+
+**`verbatim`.** Each proven key is sealed as the **verification method exactly as the identifier
+published it** — `id`, `type`, `controller`, and the key material in whichever representation the
+source used (`publicKeyJwk`, or `publicKeyMultibase` for Multikey documents) — copied
+member-for-member, values untouched, alongside the signed challenge. No derived values are
+sealed: no thumbprints, no re-encodings, no normalization. Derivations are computed at read time
+from the sealed source and can always be recomputed; a sealed derivation is just one more thing
+that can disagree with it. Because the sealed method is byte-comparable against the published
+document, that comparison is the tamper check.
+
+**`account-based`.** The identifier publishes an owner account, not a verification method, so the
+RA constructs the full method from the resolved owner account and seals it in full, alongside the
+proof. The profile fixes the method's `id`, `type`, `controller`, and the canonical account string,
+so a given owner yields one sealed method across RAs. External registry state (records, expiry,
+roles, resolver configuration) is **referenced, never copied**. Whether the proof re-verifies
+offline depends on the account type; the profile states which cases do (for `ens`, an EOA proof
+re-verifies by signature recovery, while an ERC-1271 contract-account proof attests the RA's
+proof-time check).
+
+**`thumbprint-only`.** `lei` is the deliberate exception: the seal records the subject AID and a
+key thumbprint only, because the ACDC is PII and KERI's KEL is the authoritative key history.
+
+Under the `verbatim` tier, and under the `account-based` tier wherever the profile says the proof
+re-verifies offline, a third-party verifier checks operator signatures from the badge alone
+(byte-recompute the `IdentityProofInput`, verify the proof against the sealed method, reject
+unrecognized `crit` headers per RFC 7515 §4.1.11): no audit walk, no trust in the RA. Each profile
+names its tier and the representation it seals.
 
 ## 9. The who, the what, and the FQDN primary anchor
 
@@ -587,13 +612,13 @@ enums it feeds (§10.3).
 | Kind | Profile | Requirement | Axes | Seal tier | Status |
 | --- | --- | --- | --- | --- | --- |
 | `fqdn` (agent primary) | [fqdn](identity-profiles/fqdn.md) | Required | identifier (ACME) + key (CSR) | n/a (cert-bound) | Active |
-| `did:web` | [did-web](identity-profiles/did-web.md) | Optional | key only (multi-key) | verbatim verification method | Active |
-| `did:key` | [did-key](identity-profiles/did-key.md) | Optional | key only | verbatim verification method (derived Multikey) | Active |
-| `lei` | [lei](identity-profiles/lei.md) | Optional | key only (vLEI-validated) | thumbprint-only (AID + key thumbprint) | Postponed |
-| `did:plc` | [did-plc](identity-profiles/did-plc.md) | Optional | key only (multi-key) | verbatim verification method | Deferred (sketch) |
-| `did:ethr` / `did:pkh` | [did-ethr](identity-profiles/did-ethr.md) | Optional | key only (EIP-712 / ERC-1271) | verbatim verification method | Deferred (sketch) |
-| `did:ion` | [did-ion](identity-profiles/did-ion.md) | Optional | key only (multi-key) | verbatim verification method | Deferred (sketch) |
-| `ens` | [ens](identity-profiles/ens.md) | Optional | key only (EIP-712 / ERC-1271, name-owner signature) | verbatim verification method | Postponed |
+| `did:web` | [did-web](identity-profiles/did-web.md) | Optional | key only (multi-key) | `verbatim` verification method | Active |
+| `did:key` | [did-key](identity-profiles/did-key.md) | Optional | key only | `verbatim` verification method (derived Multikey) | Active |
+| `lei` | [lei](identity-profiles/lei.md) | Optional | key only (vLEI-validated) | `thumbprint-only` (AID + key thumbprint) | Postponed |
+| `did:plc` | [did-plc](identity-profiles/did-plc.md) | Optional | key only (multi-key) | `verbatim` verification method | Deferred (sketch) |
+| `did:ethr` / `did:pkh` | [did-ethr](identity-profiles/did-ethr.md) | Optional | key only (EIP-712 / ERC-1271) | `account-based` (CAIP-10 account) | Deferred (sketch) |
+| `did:ion` | [did-ion](identity-profiles/did-ion.md) | Optional | key only (multi-key) | `verbatim` verification method | Deferred (sketch) |
+| `ens` | [ens](identity-profiles/ens.md) | Optional | key only (EIP-712 / ERC-1271, name-owner signature) | `account-based` (CAIP-10 account, EIP-55) | Postponed |
 
 > `fqdn` is the agent's primary anchor proven on the ANS-1 registration path — it is **not** a
 > `/v2/ans/identities` dispatch kind. It sits in this registry only as the archetype the
@@ -624,7 +649,7 @@ Every profile document MUST specify, in this order:
    ("passes" = every listed check clean; the seal happens only then).
 3. **Key source** — where the authoritative key(s) are resolved/decoded/presented from, and the
    `kid`/key-selection rules.
-4. **Seal tier** — verbatim verification method, or thumbprint-only, and exactly what is sealed
+4. **Seal tier** — `verbatim`, `account-based`, or `thumbprint-only`, and exactly what is sealed
    (§8.4).
 5. **Freshness and monitoring** — the ANS-5 re-check cadence and the integrity signal.
 6. **Lifecycle specifics** — rotation, revocation, re-proof, anything kind-specific.
@@ -704,7 +729,7 @@ An RA **MAY** implement the Verified Identity surface (the who). An RA that does
 4. Honor seal-before-success (§5.1) on every sealing operation.
 5. Gate links per §6 (owner + liveness) and seal link batches as one event.
 6. Emit the §8.1 event family on the identity ingest lane; compute the §8.2 views with the
-   visibility predicate and read-side terminality (§8.3); seal proven keys verbatim (§8.4).
+   visibility predicate and read-side terminality (§8.3); seal proven keys under their profile's seal tier (§8.4).
 
 ### 12.3 Verifier
 

@@ -36,9 +36,9 @@ codec differs).
     control.
   - `did:ethr` additionally honors the ERC-1056 registry's delegate/owner changes and the
     document's listed verification methods.
-- **Seal tier**: verbatim verification method — the recovered/declared `blockchainAccountId`
+- **Seal tier**: `account-based` (ANS-0 §8.4) — the recovered/declared `blockchainAccountId`
   (CAIP-10) verification method (`EcdsaSecp256k1RecoveryMethod2020` / the method's published VM),
-  sealed as published, plus the proof. For ERC-8004 agent-identity registrations, the on-chain
+  constructed from the resolved owner account and sealed in full, plus the proof. For ERC-8004 agent-identity registrations, the on-chain
   agent record is referenced, not copied.
 - **Freshness/monitoring**: ANS-5 re-reads the ERC-1056 registry / wallet code and owner; the
   signal is an owner/delegate change or a contract that stops validating the sealed authorization.
