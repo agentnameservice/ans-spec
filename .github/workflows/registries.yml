@@ -1,0 +1,46 @@
+---
+name: Registries
+
+on:
+  push:
+    paths:
+      - "registries/**"
+      - "pki/**"
+      - ".github/workflows/registries.yml"
+  pull_request:
+    paths:
+      - "registries/**"
+      - "pki/**"
+      - ".github/workflows/registries.yml"
+  merge_group:
+
+permissions: {}
+
+jobs:
+  validate:
+    name: Validate known registries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install check-jsonschema
+        run: python3 -m pip install --disable-pip-version-check "check-jsonschema==0.33.0"
+
+      - name: Validate against schema
+        run: >
+          check-jsonschema
+          --schemafile registries/known-registries.schema.json
+          registries/known-registries.json
+
+      - name: Check invariants
+        run: python3 -I registries/validate.py

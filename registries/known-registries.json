@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-18T00:00:00Z",
+  "registries": [
+    {
+      "id": "godaddy",
+      "operator": "GoDaddy",
+      "environments": {
+        "production": {
+          "ra": "https://api.godaddy.com",
+          "tl": "https://transparency.ans.godaddy.com",
+          "identityCa": {
+            "url": "https://raw.githubusercontent.com/agentnameservice/ans-spec/main/pki/prod/ca-bundle.pem",
+            "sha256": "4a3267581421b6e98470ff3a3c1ee422467facde0e12f22e57248bb56f99c443"
+          }
+        },
+        "test": {
+          "ra": "https://api.ote-godaddy.com",
+          "tl": "https://transparency.ans.ote-godaddy.com",
+          "identityCa": {
+            "url": "https://raw.githubusercontent.com/agentnameservice/ans-spec/main/pki/ote/ca-bundle.pem",
+            "sha256": "4a3267581421b6e98470ff3a3c1ee422467facde0e12f22e57248bb56f99c443"
+          }
+        }
+      }
+    }
+  ]
+}
